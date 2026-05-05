@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Proyecto</title>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f4f4;
+            margin: 20px;
+        }
+
+        .kpis {
+            display: flex;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            width: 30%;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .plan { border: 2px solid blue; }
+        .real { border: 2px solid gray; }
+        .desv { border: 2px solid red; }
+
+        #grafico {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Cumplimiento del Proyecto</h1>
+
+<div class="kpis">
+
+    <div class="card plan">
+        <h3>Avance Planificado</h3>
+        <h1 id="plan">0%</h1>
+    </div>
+
+    <div class="card real">
+        <h3>Avance Real</h3>
+        <h1 id="real">0%</h1>
+    </div>
+
+    <div class="card desv">
+        <h3>Desviación</h3>
+        <h1 id="desv">0%</h1>
+    </div>
+
+</div>
+
+<div id="grafico"></div>
+
+<script>
+
+// FRONTERAS (usan tu lista real)
+var frentes = [
+    "Core",
+    "Bantotal",
+    "Integracion",
+    "Cards",
+    "Payments",
+    "Canales asistidos",
+    "Canales Digitales",
+    "Procesos",
+    "Infra",
+    "Conceciones",
+    "Data",
+    "Aplicaciones Procesos",
+    "Migración"
+];
+
+// DATOS (ejemplo inicial)
+var plan = [67,55,89,42,44,37,50,49,55,38,20,34,34];
+var real = [64,45,89,41,44,30,47,46,45,35,12,20,20];
+
+// KPIs
+var totalPlan = promedio(plan);
+var totalReal = promedio(real);
+var totalDesv = totalPlan - totalReal;
+
+document.getElementById("plan").innerText = totalPlan.toFixed(0) + "%";
+document.getElementById("real").innerText = totalReal.toFixed(0) + "%";
+document.getElementById("desv").innerText = totalDesv.toFixed(0) + "%";
+
+// GRAFICO
+var data = [
+    {
+        x: frentes,
+        y: plan,
+        name: "Planificado",
+        type: "bar",
+        marker: {color: "red"}
+    },
+    {
+        x: frentes,
+        y: real,
+        name: "Real",
+        type: "bar",
+        marker: {color: "pink"}
+    }
+];
+
+Plotly.newPlot('grafico', data);
+
+// PROMEDIO
+function promedio(arr){
+    return arr.reduce((a,b)=>a+b,0)/arr.length;
+}
+
+</script>
+
+</body>
+</html>
