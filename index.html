@@ -2,48 +2,56 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Proyecto</title>
+<title>Tablero Proyecto Helios</title>
 
-<!-- LIBRERÍAS -->
-https://cdn.plot.ly/plotly-latest.min.js"></script>
-://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- ✅ LIBRERÍAS CORRECTAS -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-    body {
-        font-family: Arial;
-        margin: 0;
-        background:#f4f4f4;
-    }
+body {
+    font-family: Arial;
+    margin: 0;
+    background:#f4f4f4;
+}
 
-    header {
-        background: red;
-        color: white;
-        padding: 15px;
-    }
+header {
+    background: red;
+    color: white;
+    padding: 15px;
+}
 
-    .kpis {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        margin-top: 20px;
-    }
+button {
+    padding:10px;
+    background:orange;
+    border:none;
+    cursor:pointer;
+}
 
-    .card {
-        background: white;
-        padding: 20px;
-        width: 25%;
-        text-align: center;
-        border-radius: 10px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
-    }
+/* KPIs */
+.kpis {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
 
-    .plan { border: 3px solid blue; }
-    .real { border: 3px solid gray; }
-    .desv { border: 3px solid red; }
+.card {
+    background: white;
+    padding: 20px;
+    width: 25%;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+}
 
-    #grafico {
-        margin: 40px;
-    }
+.plan { border: 3px solid blue; }
+.real { border: 3px solid gray; }
+.desv { border: 3px solid red; }
+
+#grafico {
+    margin: 40px;
+}
 </style>
 
 </head>
@@ -52,10 +60,7 @@ https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <header>
     <h2>Tablero de Dependencias – Proyecto Helios</h2>
-    <button onclick="document.getElementById('fileInput').click()"
-        style="padding:10px; background:orange; border:none; cursor:pointer;">
-        📂 Cargar Excel
-    </button>
+    <button onclick="document.getElementById('fileInput').click()">📂 Cargar Excel</button>
     <input type="file" id="fileInput" style="display:none">
 </header>
 
@@ -86,129 +91,132 @@ https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script>
 
-// =====================
-// EVENTO CARGA ARCHIVO
-// =====================
-document.getElementById('fileInput').addEventListener('change', handleFile);
+// =======================
+// CARGAR EXCEL
+// =======================
+document.getElementById('fileInput').addEventListener('change', function(e){
 
-function handleFile(e){
     const file = e.target.files[0];
     const reader = new FileReader();
 
     reader.onload = function(e){
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, {type: 'array'});
+        const workbook = XLSX.read(data, {type:'array'});
 
         procesarExcel(workbook);
     };
 
     reader.readAsArrayBuffer(file);
-}
+});
 
-// =====================
+// =======================
 // PROCESAR EXCEL
-// =====================
+// =======================
 function procesarExcel(workbook){
 
     let frentes = [];
     let plan = [];
     let real = [];
 
-    workbook.SheetNames.forEach(sheetName => {
+    workbook.SheetNames.forEach(sheet => {
 
-        const sheet = workbook.Sheets[sheetName];
-        
-        // Empieza en fila 5 como tu Excel
-        const json = XLSX.utils.sheet_to_json(sheet, {range:4});
+        let ws = workbook.Sheets[sheet];
 
-        let sumaPlan = 0;
-        let sumaReal = 0;
-        let count = 0;
+        // ✅ LEER CELDAS EXACTAS
+        let planCell = ws["N3"];
+        let realCell = ws["R3"];
 
-        json.forEach(row => {
+        let planVal = leerValor(planCell);
+        let realVal = leerValor(realCell);
 
-            Object.keys(row).forEach(key => {
-                
-                let valor = row[key];
-
-                // PLAN
-                if(key.toLowerCase().includes("avance") && 
-                   !key.toLowerCase().includes("real")){
-                    
-                    sumaPlan += limpiar(valor);
-                }
-
-                // REAL
-                if(key.toLowerCase().includes("real")){
-                    sumaReal += limpiar(valor);
-                }
-
-            });
-
-            count++;
-        });
-
-        if(count > 0){
-            frentes.push(sheetName);
-            plan.push(sumaPlan / count);
-            real.push(sumaReal / count);
+        if(planVal !== null && realVal !== null){
+            frentes.push(sheet);
+            plan.push(planVal);
+            real.push(realVal);
         }
+
     });
 
-    actualizarDashboard(frentes, plan, real);
+    actualizar(frentes, plan, real);
 }
 
-// =====================
-// LIMPIAR %
-/* Convierte:
-"100%" -> 100
-*/
-function limpiar(valor){
+// =======================
+// LIMPIAR VALOR
+// =======================
+function leerValor(celda){
+
+    if(!celda) return null;
+
+    let valor = celda.v;
+
     if(typeof valor === "string"){
         valor = valor.replace("%","");
     }
-    return parseFloat(valor) || 0;
+
+    valor = parseFloat(valor);
+
+    return isNaN(valor) ? null : valor;
 }
 
-// =====================
-// ACTUALIZAR UI
-// =====================
-function actualizarDashboard(frentes, plan, real){
+// =======================
+// PROMEDIO
+// =======================
+function promedio(arr){
+
+    let validos = arr.filter(v => v !== null);
+
+    if(validos.length === 0) return 0;
+
+    return validos.reduce((a,b)=>a+b,0) / validos.length;
+}
+
+// =======================
+// ACTUALIZAR DASHBOARD
+// =======================
+function actualizar(frentes, plan, real){
 
     let totalPlan = promedio(plan);
     let totalReal = promedio(real);
-    let desv = totalPlan - totalReal;
+    let desviacion = totalPlan - totalReal;
 
     document.getElementById("plan").innerText = totalPlan.toFixed(0) + "%";
     document.getElementById("real").innerText = totalReal.toFixed(0) + "%";
-    document.getElementById("desv").innerText = desv.toFixed(0) + "%";
+    document.getElementById("desv").innerText = desviacion.toFixed(0) + "%";
 
-    var data = [
+    let data = [
         {
             x: frentes,
             y: plan,
-            name:"Planificado",
-            type:"bar",
-            marker:{color:"red"}
+            name: "Planificado",
+            type: "bar",
+            marker: {color: "red"},
+
+            // ✅ PORCENTAJES EN BARRAS
+            text: plan.map(v => v.toFixed(0) + "%"),
+            textposition: "outside"
         },
         {
             x: frentes,
             y: real,
-            name:"Real",
-            type:"bar",
-            marker:{color:"pink"}
+            name: "Real",
+            type: "bar",
+            marker: {color: "pink"},
+
+            text: real.map(v => v.toFixed(0) + "%"),
+            textposition: "outside"
         }
     ];
 
-    Plotly.newPlot("grafico", data);
-}
-
-// =====================
-function promedio(arr){
-    return arr.reduce((a,b)=>a+b,0)/arr.length;
+    Plotly.newPlot("grafico", data, {
+        yaxis: {
+            range: [0,100],
+            ticksuffix: "%"
+        }
+    });
 }
 
 </script>
 
 </body>
 </html>
+``
