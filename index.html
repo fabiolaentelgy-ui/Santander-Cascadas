@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>TABLERO DE CASCADAS</title>
+<title>Tablero de Cascadas</title>
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -14,7 +14,6 @@ body {
     background:#f4f4f4;
 }
 
-/* HEADER */
 header {
     background: red;
     color: white;
@@ -27,7 +26,7 @@ header {
 header h2{
     font-size:28px;
     font-weight:bold;
-    text-transform:uppercase;
+    text-transform:capitalize;
 }
 
 #fechaHoy{
@@ -42,7 +41,6 @@ button {
     cursor: pointer;
 }
 
-/* TITULO */
 h2.main-title{
     text-align:center;
     font-size:26px;
@@ -50,7 +48,6 @@ h2.main-title{
     text-transform:uppercase;
 }
 
-/* KPIs */
 .kpis {
     display: flex;
     justify-content: center;
@@ -64,33 +61,25 @@ h2.main-title{
     width: 25%;
     text-align: center;
     border-radius: 10px;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
 }
 
 .card h3{
-    font-size:18px;
     font-weight:bold;
-    text-transform:uppercase;
-}
-
-.card h1{
-    font-size:36px;
+    text-transform:capitalize;
 }
 
 .plan { border: 3px solid #4a6cff; }
 .real { border: 3px solid gray; }
 .desv { border: 3px solid red; }
 
-/* FILTRO */
 .filtro {
-    margin:20px; 
-    background:white; 
-    padding:15px; 
+    margin:20px;
+    background:white;
+    padding:15px;
     border-radius:10px;
     font-weight:bold;
 }
 
-/* TABLA */
 table {
     width:100%;
     border-collapse:collapse;
@@ -103,70 +92,61 @@ th, td {
 
 th {
     background:#ddd;
-    font-weight:bold;
-    text-transform:uppercase;
 }
-
 </style>
 </head>
 
 <body>
 
 <header>
-    <h2>TABLERO DE CASCADAS</h2>
-
+    <h2>Tablero de Cascadas</h2>
     <div id="fechaHoy"></div>
-
     <button onclick="document.getElementById('fileInput').click()">📂 Cargar Excel</button>
     <input type="file" id="fileInput" style="display:none">
 </header>
 
 <h2 class="main-title">CUMPLIMIENTO DEL PROYECTO</h2>
 
-<!-- KPIs -->
 <div class="kpis">
     <div class="card plan">
-        <h3>AVANCE PLANIFICADO</h3>
+        <h3>Avance Planificado</h3>
         <h1 id="plan">0%</h1>
     </div>
 
     <div class="card real">
-        <h3>AVANCE REAL</h3>
+        <h3>Avance Real</h3>
         <h1 id="real">0%</h1>
     </div>
 
     <div class="card desv">
-        <h3>DESVIACIÓN</h3>
+        <h3>Desviación</h3>
         <h1 id="desv">0%</h1>
     </div>
 </div>
 
-<!-- FILTRO -->
 <div class="filtro">
-    FRENTE:
+    Frente:
     <select id="filtroFrente" onchange="filtrar()">
-        <option value="Todos">TODOS</option>
+        <option value="Todos">Todos</option>
     </select>
 
     <button onclick="limpiarFiltro()" style="margin-left:20px; background:red; color:white;">
-        LIMPIAR
+        Limpiar
     </button>
 </div>
 
-<!-- GRAFICO -->
 <div id="grafico" style="margin:40px;"></div>
 
-<!-- TABLA -->
 <div style="margin:40px; background:white; padding:20px; border-radius:10px;">
-    <h3 style="text-transform:uppercase;">DETALLE POR FRENTE</h3>
+    <h3>Detalle por frente</h3>
 
     <table id="tablaDetalle">
         <thead>
             <tr>
-                <th>FRONTE</th>
-                <th>PLANIFICADO</th>
-                <th>REAL</th>
-                <th>DESVIACIÓN</th>
+                <th>Frente</th>
+                <th>Planificado</th>
+                <th>Real</th>
+                <th>Desviación</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -174,6 +154,11 @@ th {
 </div>
 
 <script>
+
+// ===== FORMATO TEXTO =====
+function capitalizar(texto){
+    return texto.toLowerCase().replace(/(^\w|\s\w)/g, l => l.toUpperCase());
+}
 
 // ===== FECHA =====
 function mostrarFecha(){
@@ -190,18 +175,15 @@ let frentesGlobal = [];
 let planGlobal = [];
 let realGlobal = [];
 
-// ===== NORMALIZAR NOMBRES =====
+// ===== NORMALIZAR =====
 function normalizarNombre(nombre){
 
-    if(nombre.toLowerCase().includes("infra")){
-        return "INFRAESTRUCTURA";
-    }
+    let n = nombre.toLowerCase();
 
-    if(nombre.toLowerCase().includes("aplica")){
-        return "APLICACIONES SOPORTE";
-    }
+    if(n.includes("infra")) return "Infraestructura";
+    if(n.includes("aplica")) return "Aplicaciones soporte";
 
-    return nombre;
+    return capitalizar(nombre);
 }
 
 // ===== CARGAR EXCEL =====
@@ -233,11 +215,14 @@ function procesarExcel(workbook){
         let p = leerValor(ws["N3"]);
         let r = leerValor(ws["R3"]);
 
-        if(p !== null && r !== null){
-            frentes.push(normalizarNombre(sheet));
-            plan.push(p);
-            real.push(r);
-        }
+        // ✅ SIEMPRE AGREGAR (aunque sea 0)
+        if(p === null) p = 0;
+        if(r === null) r = 0;
+
+        frentes.push(normalizarNombre(sheet));
+        plan.push(p);
+        real.push(r);
+
     });
 
     frentesGlobal = frentes;
@@ -255,8 +240,7 @@ function leerValor(celda){
     let v = celda.v;
 
     if(typeof v === "string"){
-        v = v.replace("%","");
-        v = parseFloat(v);
+        v = parseFloat(v.replace("%",""));
     }
 
     if(v <= 1) v *= 100;
@@ -266,9 +250,7 @@ function leerValor(celda){
 
 // ===== PROMEDIO =====
 function promedio(arr){
-    let v = arr.filter(x=>x!==null);
-    if(v.length==0) return 0;
-    return v.reduce((a,b)=>a+b,0)/v.length;
+    return arr.reduce((a,b)=>a+b,0)/arr.length;
 }
 
 // ===== GRAFICO =====
@@ -286,7 +268,7 @@ function actualizar(frentes, plan, real){
         {
             x: frentes,
             y: plan,
-            name:'PLANIFICADO',
+            name:'Planificado',
             type:'bar',
             text: plan.map(v=>v.toFixed(0)+"%"),
             textposition:'outside',
@@ -295,7 +277,7 @@ function actualizar(frentes, plan, real){
         {
             x: frentes,
             y: real,
-            name:'REAL',
+            name:'Real',
             type:'bar',
             text: real.map(v=>v.toFixed(0)+"%"),
             textposition:'outside',
@@ -303,7 +285,7 @@ function actualizar(frentes, plan, real){
         }
     ],
     {
-        title:"AVANCE PLANIFICADO Y REAL POR FRENTE",
+        title:"Avance Planificado y Real por Frente",
         yaxis:{range:[0,100],ticksuffix:"%"},
         barmode:'group'
     });
@@ -336,7 +318,7 @@ function llenarTabla(frentes, plan, real){
 // ===== FILTRO =====
 function llenarFiltro(frentes){
     let s = document.getElementById("filtroFrente");
-    s.innerHTML = '<option value="Todos">TODOS</option>';
+    s.innerHTML = '<option value="Todos">Todos</option>';
 
     frentes.forEach(f=>{
         let o = document.createElement("option");
@@ -347,7 +329,6 @@ function llenarFiltro(frentes){
 }
 
 function filtrar(){
-
     let f = document.getElementById("filtroFrente").value;
 
     if(f==="Todos"){
@@ -372,3 +353,4 @@ function limpiarFiltro(){
 
 </body>
 </html>
+``
