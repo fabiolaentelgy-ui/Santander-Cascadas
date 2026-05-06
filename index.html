@@ -37,7 +37,6 @@ button { background:orange; padding:10px; border:none; cursor:pointer; }
 table {width:100%; border-collapse:collapse;}
 th,td{padding:8px;text-align:center;}
 th{background:#ddd;}
-
 </style>
 </head>
 
@@ -82,14 +81,14 @@ Frente:
 
 <script>
 
-// ✅ SOLO 13 FRENTES
+// ✅ LISTA FLEXIBLE (detecta variaciones, errores, plurales)
 const FRENTES_VALIDOS = [
-"core","global tpa","integracion","cards","payments",
-"canal asistido","canal digital","procesos",
-"aplicaciones","migracion","data","concesiones","infra"
+"core","global","integr","card","payment",
+"asist","digital","proceso",
+"aplic","migr","data","conces","infra"
 ];
 
-// ✅ capitalizar
+// ✅ capitalizar texto
 function capitalizar(t){
 return t.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 }
@@ -98,29 +97,41 @@ return t.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 (function(){
 let h=new Date();
 document.getElementById("fechaHoy").innerText=
-String(h.getDate()).padStart(2,'0')+"/"+String(h.getMonth()+1).padStart(2,'0')+"/"+String(h.getFullYear()).slice(-2);
+String(h.getDate()).padStart(2,'0')+"/"+
+String(h.getMonth()+1).padStart(2,'0')+"/"+
+String(h.getFullYear()).slice(-2);
 })();
 
 let frentesGlobal=[],planGlobal=[],realGlobal=[];
 
+// ✅ normalizar nombres correctamente
 function normalizar(n){
+
 let t=n.toLowerCase();
+
 if(t.includes("infra")) return "Infraestructura";
-if(t.includes("aplica")) return "Aplicaciones Soporte";
+if(t.includes("aplic")) return "Aplicaciones Soporte";
+if(t.includes("asist")) return "Canales Asistidos";
+if(t.includes("digital")) return "Canales Digitales";
+if(t.includes("integr")) return "Integraciones";
+if(t.includes("migr")) return "Migración";
+
 return capitalizar(n);
 }
 
 // ✅ cargar excel
 document.getElementById('fileInput').addEventListener('change', e=>{
 let reader=new FileReader();
+
 reader.onload=e=>{
 let wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
 procesarExcel(wb);
 };
+
 reader.readAsArrayBuffer(e.target.files[0]);
 });
 
-// ✅ PROCESO CORRECTO
+// ✅ PROCESO FINAL CORRECTO
 function procesarExcel(wb){
 
 let frentes=[],plan=[],real=[];
@@ -129,15 +140,17 @@ wb.SheetNames.forEach(s=>{
 
 let nombre=s.toLowerCase();
 
-// ✅ FILTRAR SOLO LOS 13
+// ✅ FILTRO ROBUSTO
 let valido=FRENTES_VALIDOS.some(f=>nombre.includes(f));
 if(!valido) return;
 
 let ws=wb.Sheets[s];
 
+// ✅ LEER CELDAS
 let p=leer(ws["N3"]);
 let r=leer(ws["R3"]);
 
+// ✅ SI VIENE VACIO → 0
 if(p===null) p=0;
 if(r===null) r=0;
 
@@ -147,57 +160,86 @@ real.push(r);
 
 });
 
+// ✅ GUARDAR
 frentesGlobal=frentes;
 planGlobal=plan;
 realGlobal=real;
 
+// ✅ ACTUALIZAR UI
 llenarFiltro(frentes);
 actualizar(frentes,plan,real);
 llenarTabla(frentes,plan,real);
 }
 
+// ✅ limpieza valor
 function leer(c){
 if(!c) return null;
 let v=c.v;
+
 if(typeof v==="string") v=parseFloat(v.replace("%",""));
 if(v<=1) v*=100;
+
 return isNaN(v)?null:v;
 }
 
+// ✅ promedio
 function promedio(a){
 return a.reduce((x,y)=>x+y,0)/a.length;
 }
 
+// ✅ grafico
 function actualizar(f,p,r){
 
-let P=promedio(p),R=promedio(r),D=P-R;
+let P=promedio(p);
+let R=promedio(r);
+let D=P-R;
 
-plan.innerText=P.toFixed(0)+"%";
-real.innerText=R.toFixed(0)+"%";
-desv.innerText=D.toFixed(0)+"%";
+document.getElementById("plan").innerText=P.toFixed(0)+"%";
+document.getElementById("real").innerText=R.toFixed(0)+"%";
+document.getElementById("desv").innerText=D.toFixed(0)+"%";
 
 Plotly.newPlot("grafico",[
-{x:f,y:p,type:'bar',name:'Planificado',marker:{color:'red'},text:p.map(v=>v.toFixed(0)+"%"),textposition:'outside'},
-{x:f,y:r,type:'bar',name:'Real',marker:{color:'pink'},text:r.map(v=>v.toFixed(0)+"%"),textposition:'outside'}
-],{
+{x:f,y:p,type:'bar',name:'Planificado',
+ text:p.map(v=>v.toFixed(0)+"%"),textposition:'outside',
+ marker:{color:'red'}},
+
+{x:f,y:r,type:'bar',name:'Real',
+ text:r.map(v=>v.toFixed(0)+"%"),textposition:'outside',
+ marker:{color:'pink'}}
+],
+{
 title:"Avance Planificado y Real por Frente",
 yaxis:{range:[0,100],ticksuffix:"%"}
 });
 }
 
+// ✅ tabla
 function llenarTabla(f,p,r){
+
 let tb=document.querySelector("#tablaDetalle tbody");
 tb.innerHTML="";
+
 f.forEach((x,i)=>{
+
 let d=p[i]-r[i];
+
 let c=d>10?"red":d>5?"orange":"lightgreen";
-tb.innerHTML+=`<tr><td>${x}</td><td>${p[i].toFixed(0)}%</td><td>${r[i].toFixed(0)}%</td><td style="background:${c}">${d.toFixed(0)}%</td></tr>`;
+
+tb.innerHTML+=`
+<tr>
+<td>${x}</td>
+<td>${p[i].toFixed(0)}%</td>
+<td>${r[i].toFixed(0)}%</td>
+<td style="background:${c}">${d.toFixed(0)}%</td>
+</tr>`;
 });
 }
 
+// ✅ filtro
 function llenarFiltro(f){
 let s=document.getElementById("filtroFrente");
 s.innerHTML='<option>Todos</option>';
+
 f.forEach(x=>{
 let o=document.createElement("option");
 o.value=x;o.text=x;
@@ -206,13 +248,17 @@ s.appendChild(o);
 }
 
 function filtrar(){
+
 let f=filtroFrente.value;
+
 if(f==="Todos"){
 actualizar(frentesGlobal,planGlobal,realGlobal);
 llenarTabla(frentesGlobal,planGlobal,realGlobal);
 return;
 }
+
 let i=frentesGlobal.indexOf(f);
+
 actualizar([frentesGlobal[i]],[planGlobal[i]],[realGlobal[i]]);
 llenarTabla([frentesGlobal[i]],[planGlobal[i]],[realGlobal[i]]);
 }
