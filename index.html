@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tablero Proyecto Helios</title>
+<title>Tablero de Cascadas</title>
 
-<!-- ✅ LIBRERÍAS CORRECTAS -->
+<!-- LIBRERÍAS -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -46,22 +46,29 @@ button {
     box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
 }
 
-.plan { border: 3px solid blue; }
+.plan { border: 3px solid #4a6cff; }
 .real { border: 3px solid gray; }
 .desv { border: 3px solid red; }
+
+/* FILTRO */
+.filtro {
+    margin:20px; 
+    background:white; 
+    padding:15px; 
+    border-radius:10px;
+}
 
 /* GRAFICO */
 #grafico {
     margin: 40px;
 }
 </style>
-
 </head>
 
 <body>
 
 <header>
-    <h2>Tablero de Dependencias – Proyecto Helios</h2>
+    <h2>Tablero de Cascadas</h2>
     <button onclick="document.getElementById('fileInput').click()">📂 Cargar Excel</button>
     <input type="file" id="fileInput" style="display:none">
 </header>
@@ -70,7 +77,6 @@ button {
 
 <!-- KPIs -->
 <div class="kpis">
-
     <div class="card plan">
         <h3>Avance Planificado</h3>
         <h1 id="plan">0%</h1>
@@ -85,7 +91,19 @@ button {
         <h3>Desviación</h3>
         <h1 id="desv">0%</h1>
     </div>
+</div>
 
+<!-- FILTRO -->
+<div class="filtro">
+    <label><b>Frente:</b></label>
+
+    <select id="filtroFrente" onchange="filtrar()">
+        <option value="Todos">Todos</option>
+    </select>
+
+    <button onclick="limpiarFiltro()" style="margin-left:20px; background:#ff4d4d; color:white;">
+        ✖ Limpiar
+    </button>
 </div>
 
 <!-- GRAFICO -->
@@ -93,9 +111,12 @@ button {
 
 <script>
 
-// =====================
-// CARGAR EXCEL
-// =====================
+// ================= GLOBAL =================
+let frentesGlobal = [];
+let planGlobal = [];
+let realGlobal = [];
+
+// ================= CARGAR EXCEL =================
 document.getElementById('fileInput').addEventListener('change', function(e){
 
     const file = e.target.files[0];
@@ -111,10 +132,7 @@ document.getElementById('fileInput').addEventListener('change', function(e){
     reader.readAsArrayBuffer(file);
 });
 
-
-// =====================
-// PROCESAR EXCEL
-// =====================
+// ================= PROCESAR =================
 function procesarExcel(workbook){
 
     let frentes = [];
@@ -125,7 +143,6 @@ function procesarExcel(workbook){
 
         let ws = workbook.Sheets[sheet];
 
-        // ✅ LEER CELDAS EXACTAS
         let planCell = ws["N3"];
         let realCell = ws["R3"];
 
@@ -140,13 +157,17 @@ function procesarExcel(workbook){
 
     });
 
+    // GUARDAR GLOBAL
+    frentesGlobal = frentes;
+    planGlobal = plan;
+    realGlobal = real;
+
+    llenarFiltro(frentes);
+
     actualizar(frentes, plan, real);
 }
 
-
-// =====================
-// LIMPIAR VALORES
-// =====================
+// ================= LIMPIAR VALOR =================
 function leerValor(celda){
 
     if(!celda) return null;
@@ -158,7 +179,6 @@ function leerValor(celda){
         valor = parseFloat(valor);
     }
 
-    // ✅ SI ES DECIMAL (0.48 → 48)
     if(valor <= 1){
         valor = valor * 100;
     }
@@ -166,23 +186,14 @@ function leerValor(celda){
     return isNaN(valor) ? null : valor;
 }
 
-
-// =====================
-// PROMEDIO
-// =====================
+// ================= PROMEDIO =================
 function promedio(arr){
-
     let validos = arr.filter(v => v !== null);
-
     if(validos.length === 0) return 0;
-
     return validos.reduce((a,b)=>a+b,0) / validos.length;
 }
 
-
-// =====================
-// ACTUALIZAR DASHBOARD
-// =====================
+// ================= GRAFICO =================
 function actualizar(frentes, plan, real){
 
     let totalPlan = promedio(plan);
@@ -218,6 +229,50 @@ function actualizar(frentes, plan, real){
         yaxis: { range:[0,100], ticksuffix:"%" },
         barmode:"group"
     });
+}
+
+// ================= FILTRO =================
+function llenarFiltro(frentes){
+
+    let select = document.getElementById("filtroFrente");
+
+    select.innerHTML = '<option value="Todos">Todos</option>';
+
+    frentes.forEach(f => {
+        let option = document.createElement("option");
+        option.value = f;
+        option.text = f;
+        select.appendChild(option);
+    });
+}
+
+// ================= FILTRAR =================
+function filtrar(){
+
+    let seleccionado = document.getElementById("filtroFrente").value;
+
+    if(seleccionado === "Todos"){
+        actualizar(frentesGlobal, planGlobal, realGlobal);
+        return;
+    }
+
+    let index = frentesGlobal.indexOf(seleccionado);
+
+    if(index !== -1){
+        actualizar(
+            [frentesGlobal[index]],
+            [planGlobal[index]],
+            [realGlobal[index]]
+        );
+    }
+}
+
+// ================= LIMPIAR =================
+function limpiarFiltro(){
+
+    document.getElementById("filtroFrente").value = "Todos";
+
+    actualizar(frentesGlobal, planGlobal, realGlobal);
 }
 
 </script>
