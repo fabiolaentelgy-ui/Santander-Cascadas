@@ -18,22 +18,23 @@ body {
 header {
     background: red;
     color: white;
-    padding: 15px;
+    padding: 20px;
 }
 
+/* BOTÓN */
 button {
-    padding:10px;
-    background:orange;
-    border:none;
-    cursor:pointer;
+    background: orange;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
 }
 
 /* KPIs */
 .kpis {
     display: flex;
-    gap: 20px;
     justify-content: center;
-    margin-top: 20px;
+    gap: 20px;
+    margin: 20px;
 }
 
 .card {
@@ -49,6 +50,7 @@ button {
 .real { border: 3px solid gray; }
 .desv { border: 3px solid red; }
 
+/* GRAFICO */
 #grafico {
     margin: 40px;
 }
@@ -64,12 +66,11 @@ button {
     <input type="file" id="fileInput" style="display:none">
 </header>
 
-<div style="text-align:center; margin-top:30px;">
-    <h1>Cargar Excel</h1>
-</div>
+<h2 style="text-align:center;">Cumplimiento del Proyecto</h2>
 
 <!-- KPIs -->
 <div class="kpis">
+
     <div class="card plan">
         <h3>Avance Planificado</h3>
         <h1 id="plan">0%</h1>
@@ -84,6 +85,7 @@ button {
         <h3>Desviación</h3>
         <h1 id="desv">0%</h1>
     </div>
+
 </div>
 
 <!-- GRAFICO -->
@@ -91,9 +93,9 @@ button {
 
 <script>
 
-// =======================
+// =====================
 // CARGAR EXCEL
-// =======================
+// =====================
 document.getElementById('fileInput').addEventListener('change', function(e){
 
     const file = e.target.files[0];
@@ -109,9 +111,10 @@ document.getElementById('fileInput').addEventListener('change', function(e){
     reader.readAsArrayBuffer(file);
 });
 
-// =======================
+
+// =====================
 // PROCESAR EXCEL
-// =======================
+// =====================
 function procesarExcel(workbook){
 
     let frentes = [];
@@ -140,9 +143,10 @@ function procesarExcel(workbook){
     actualizar(frentes, plan, real);
 }
 
-// =======================
-// LIMPIAR VALOR
-// =======================
+
+// =====================
+// LIMPIAR VALORES
+// =====================
 function leerValor(celda){
 
     if(!celda) return null;
@@ -151,16 +155,21 @@ function leerValor(celda){
 
     if(typeof valor === "string"){
         valor = valor.replace("%","");
+        valor = parseFloat(valor);
     }
 
-    valor = parseFloat(valor);
+    // ✅ SI ES DECIMAL (0.48 → 48)
+    if(valor <= 1){
+        valor = valor * 100;
+    }
 
     return isNaN(valor) ? null : valor;
 }
 
-// =======================
+
+// =====================
 // PROMEDIO
-// =======================
+// =====================
 function promedio(arr){
 
     let validos = arr.filter(v => v !== null);
@@ -170,9 +179,10 @@ function promedio(arr){
     return validos.reduce((a,b)=>a+b,0) / validos.length;
 }
 
-// =======================
+
+// =====================
 // ACTUALIZAR DASHBOARD
-// =======================
+// =====================
 function actualizar(frentes, plan, real){
 
     let totalPlan = promedio(plan);
@@ -190,8 +200,6 @@ function actualizar(frentes, plan, real){
             name: "Planificado",
             type: "bar",
             marker: {color: "red"},
-
-            // ✅ PORCENTAJES EN BARRAS
             text: plan.map(v => v.toFixed(0) + "%"),
             textposition: "outside"
         },
@@ -201,17 +209,14 @@ function actualizar(frentes, plan, real){
             name: "Real",
             type: "bar",
             marker: {color: "pink"},
-
             text: real.map(v => v.toFixed(0) + "%"),
             textposition: "outside"
         }
     ];
 
     Plotly.newPlot("grafico", data, {
-        yaxis: {
-            range: [0,100],
-            ticksuffix: "%"
-        }
+        yaxis: { range:[0,100], ticksuffix:"%" },
+        barmode:"group"
     });
 }
 
@@ -219,4 +224,3 @@ function actualizar(frentes, plan, real){
 
 </body>
 </html>
-``
