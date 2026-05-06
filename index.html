@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Tablero de Cascadas</title>
+<title>TABLERO DE CASCADAS</title>
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -14,6 +14,7 @@ body {
     background:#f4f4f4;
 }
 
+/* HEADER */
 header {
     background: red;
     color: white;
@@ -23,11 +24,30 @@ header {
     align-items:center;
 }
 
+header h2{
+    font-size:28px;
+    font-weight:bold;
+    text-transform:uppercase;
+}
+
+#fechaHoy{
+    font-size:18px;
+    font-weight:bold;
+}
+
 button {
     background: orange;
-    padding: 8px;
+    padding: 10px;
     border: none;
     cursor: pointer;
+}
+
+/* TITULO */
+h2.main-title{
+    text-align:center;
+    font-size:26px;
+    font-weight:bold;
+    text-transform:uppercase;
 }
 
 /* KPIs */
@@ -47,6 +67,16 @@ button {
     box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
 }
 
+.card h3{
+    font-size:18px;
+    font-weight:bold;
+    text-transform:uppercase;
+}
+
+.card h1{
+    font-size:36px;
+}
+
 .plan { border: 3px solid #4a6cff; }
 .real { border: 3px solid gray; }
 .desv { border: 3px solid red; }
@@ -57,6 +87,7 @@ button {
     background:white; 
     padding:15px; 
     border-radius:10px;
+    font-weight:bold;
 }
 
 /* TABLA */
@@ -72,15 +103,17 @@ th, td {
 
 th {
     background:#ddd;
+    font-weight:bold;
+    text-transform:uppercase;
 }
-</style>
 
+</style>
 </head>
 
 <body>
 
 <header>
-    <h2>Tablero de Cascadas</h2>
+    <h2>TABLERO DE CASCADAS</h2>
 
     <div id="fechaHoy"></div>
 
@@ -88,36 +121,35 @@ th {
     <input type="file" id="fileInput" style="display:none">
 </header>
 
-<h2 style="text-align:center;">Cumplimiento del Proyecto</h2>
+<h2 class="main-title">CUMPLIMIENTO DEL PROYECTO</h2>
 
 <!-- KPIs -->
 <div class="kpis">
     <div class="card plan">
-        <h3>Avance Planificado</h3>
+        <h3>AVANCE PLANIFICADO</h3>
         <h1 id="plan">0%</h1>
     </div>
 
     <div class="card real">
-        <h3>Avance Real</h3>
+        <h3>AVANCE REAL</h3>
         <h1 id="real">0%</h1>
     </div>
 
     <div class="card desv">
-        <h3>Desviación</h3>
+        <h3>DESVIACIÓN</h3>
         <h1 id="desv">0%</h1>
     </div>
 </div>
 
 <!-- FILTRO -->
 <div class="filtro">
-    <label><b>Frente:</b></label>
-
+    FRENTE:
     <select id="filtroFrente" onchange="filtrar()">
-        <option value="Todos">Todos</option>
+        <option value="Todos">TODOS</option>
     </select>
 
-    <button onclick="limpiarFiltro()" style="margin-left:20px; background:#ff4d4d; color:white;">
-        ✖ Limpiar
+    <button onclick="limpiarFiltro()" style="margin-left:20px; background:red; color:white;">
+        LIMPIAR
     </button>
 </div>
 
@@ -126,15 +158,15 @@ th {
 
 <!-- TABLA -->
 <div style="margin:40px; background:white; padding:20px; border-radius:10px;">
-    <h3>Detalle por Frente</h3>
+    <h3 style="text-transform:uppercase;">DETALLE POR FRENTE</h3>
 
     <table id="tablaDetalle">
         <thead>
             <tr>
-                <th>Frente</th>
-                <th>Planificado</th>
-                <th>Real</th>
-                <th>Desviación</th>
+                <th>FRONTE</th>
+                <th>PLANIFICADO</th>
+                <th>REAL</th>
+                <th>DESVIACIÓN</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -145,10 +177,10 @@ th {
 
 // ===== FECHA =====
 function mostrarFecha(){
-    let hoy = new Date();
-    let d = String(hoy.getDate()).padStart(2,'0');
-    let m = String(hoy.getMonth()+1).padStart(2,'0');
-    let a = String(hoy.getFullYear()).slice(-2);
+    let h = new Date();
+    let d = String(h.getDate()).padStart(2,'0');
+    let m = String(h.getMonth()+1).padStart(2,'0');
+    let a = String(h.getFullYear()).slice(-2);
     document.getElementById("fechaHoy").innerText = `${d}/${m}/${a}`;
 }
 mostrarFecha();
@@ -157,6 +189,20 @@ mostrarFecha();
 let frentesGlobal = [];
 let planGlobal = [];
 let realGlobal = [];
+
+// ===== NORMALIZAR NOMBRES =====
+function normalizarNombre(nombre){
+
+    if(nombre.toLowerCase().includes("infra")){
+        return "INFRAESTRUCTURA";
+    }
+
+    if(nombre.toLowerCase().includes("aplica")){
+        return "APLICACIONES SOPORTE";
+    }
+
+    return nombre;
+}
 
 // ===== CARGAR EXCEL =====
 document.getElementById('fileInput').addEventListener('change', function(e){
@@ -184,15 +230,14 @@ function procesarExcel(workbook){
 
         let ws = workbook.Sheets[sheet];
 
-        let planVal = leerValor(ws["N3"]);
-        let realVal = leerValor(ws["R3"]);
+        let p = leerValor(ws["N3"]);
+        let r = leerValor(ws["R3"]);
 
-        if(planVal !== null && realVal !== null){
-            frentes.push(sheet);
-            plan.push(planVal);
-            real.push(realVal);
+        if(p !== null && r !== null){
+            frentes.push(normalizarNombre(sheet));
+            plan.push(p);
+            real.push(r);
         }
-
     });
 
     frentesGlobal = frentes;
@@ -200,25 +245,23 @@ function procesarExcel(workbook){
     realGlobal = real;
 
     llenarFiltro(frentes);
-
     actualizar(frentes, plan, real);
     llenarTabla(frentes, plan, real);
 }
 
-// ===== LIMPIAR VALORES =====
+// ===== LIMPIAR =====
 function leerValor(celda){
     if(!celda) return null;
+    let v = celda.v;
 
-    let valor = celda.v;
-
-    if(typeof valor === "string"){
-        valor = valor.replace("%","");
-        valor = parseFloat(valor);
+    if(typeof v === "string"){
+        v = v.replace("%","");
+        v = parseFloat(v);
     }
 
-    if(valor <= 1) valor *= 100;
+    if(v <= 1) v *= 100;
 
-    return isNaN(valor) ? null : valor;
+    return isNaN(v) ? null : v;
 }
 
 // ===== PROMEDIO =====
@@ -235,35 +278,34 @@ function actualizar(frentes, plan, real){
     let r = promedio(real);
     let d = p - r;
 
-    document.getElementById("plan").innerText = p.toFixed(0) + "%";
-    document.getElementById("real").innerText = r.toFixed(0) + "%";
-    document.getElementById("desv").innerText = d.toFixed(0) + "%";
+    document.getElementById("plan").innerText = p.toFixed(0)+"%";
+    document.getElementById("real").innerText = r.toFixed(0)+"%";
+    document.getElementById("desv").innerText = d.toFixed(0)+"%";
 
-    let data = [
+    Plotly.newPlot("grafico", [
         {
             x: frentes,
             y: plan,
-            name: "Planificado",
-            type: "bar",
-            marker: {color:"red"},
+            name:'PLANIFICADO',
+            type:'bar',
             text: plan.map(v=>v.toFixed(0)+"%"),
-            textposition:"outside"
+            textposition:'outside',
+            marker:{color:'red'}
         },
         {
             x: frentes,
             y: real,
-            name: "Real",
-            type: "bar",
-            marker: {color:"pink"},
+            name:'REAL',
+            type:'bar',
             text: real.map(v=>v.toFixed(0)+"%"),
-            textposition:"outside"
+            textposition:'outside',
+            marker:{color:'pink'}
         }
-    ];
-
-    Plotly.newPlot("grafico", data, {
-        title: "Avance Planificado y Avance Real por Frente",
+    ],
+    {
+        title:"AVANCE PLANIFICADO Y REAL POR FRENTE",
         yaxis:{range:[0,100],ticksuffix:"%"},
-        barmode:"group"
+        barmode:'group'
     });
 }
 
@@ -275,57 +317,53 @@ function llenarTabla(frentes, plan, real){
 
     frentes.forEach((f,i)=>{
 
-        let p = plan[i];
-        let r = real[i];
-        let d = p - r;
+        let d = plan[i] - real[i];
 
         let color = "lightgreen";
         if(d > 10) color="red";
         else if(d > 5) color="orange";
 
-        let fila = `
+        tbody.innerHTML += `
         <tr>
             <td>${f}</td>
-            <td>${p.toFixed(0)}%</td>
-            <td>${r.toFixed(0)}%</td>
+            <td>${plan[i].toFixed(0)}%</td>
+            <td>${real[i].toFixed(0)}%</td>
             <td style="background:${color};">${d.toFixed(0)}%</td>
         </tr>`;
-
-        tbody.innerHTML += fila;
     });
 }
 
 // ===== FILTRO =====
 function llenarFiltro(frentes){
-    let select = document.getElementById("filtroFrente");
-    select.innerHTML = '<option value="Todos">Todos</option>';
+    let s = document.getElementById("filtroFrente");
+    s.innerHTML = '<option value="Todos">TODOS</option>';
 
     frentes.forEach(f=>{
         let o = document.createElement("option");
         o.value=f;
         o.text=f;
-        select.appendChild(o);
+        s.appendChild(o);
     });
 }
 
 function filtrar(){
 
-    let s = document.getElementById("filtroFrente").value;
+    let f = document.getElementById("filtroFrente").value;
 
-    if(s === "Todos"){
+    if(f==="Todos"){
         actualizar(frentesGlobal, planGlobal, realGlobal);
         llenarTabla(frentesGlobal, planGlobal, realGlobal);
         return;
     }
 
-    let i = frentesGlobal.indexOf(s);
+    let i = frentesGlobal.indexOf(f);
 
     actualizar([frentesGlobal[i]], [planGlobal[i]], [realGlobal[i]]);
     llenarTabla([frentesGlobal[i]], [planGlobal[i]], [realGlobal[i]]);
 }
 
 function limpiarFiltro(){
-    document.getElementById("filtroFrente").value = "Todos";
+    document.getElementById("filtroFrente").value="Todos";
     actualizar(frentesGlobal, planGlobal, realGlobal);
     llenarTabla(frentesGlobal, planGlobal, realGlobal);
 }
